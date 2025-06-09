@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GIẢI TOÁN ĐƠN GIẢN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e7f9eb;
+            color: #333;
+        }
+        #game-container {
+            background-color: #ffffff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        #level-display {
+            margin-bottom: 15px;
+        }
+        #question-box {
+            background-color: #f0fdf4;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 80px;
+        }
+        #question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        #instruction-text {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        #answer-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #submit-button, #retry-button {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #submit-button:hover, #retry-button:hover {
+            background-color: #45a049;
+        }
+        #feedback-message {
+            margin-top: 10px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        .win-message {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        #timer {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #score-display {
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>GIẢI TOÁN ĐƠN GIẢN</h1>
+        <div id="level-display">Màn <span id="level-number">1</span> / 250</div>
+        <div id="score-display">Điểm: <span id="score">0</span></div>
+        <div id="timer">Thời gian: <span id="time-left">10</span>s</div>
+        <div id="question-box">
+            <div id="question-text">Câu hỏi sẽ hiện ở đây.</div>
+        </div>
+        <div id="instruction-text">Lưu ý: Làm tròn kết quả đến 2 chữ số thập phân nếu cần.</div>
+        <input type="text" id="answer-input" placeholder="Nhập câu trả lời của bạn..." />
+        <button id="submit-button">Kiểm Tra</button>
+        <p id="feedback-message"></p>
+    </div>
+    <script>
+        const levelNumberEl = document.getElementById('level-number');
+        const scoreEl = document.getElementById('score');
+        const questionTextEl = document.getElementById('question-text');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const feedbackMessageEl = document.getElementById('feedback-message');
+        const timerEl = document.getElementById('time-left');
+        const gameContainer = document.getElementById('game-container');
+
+        let currentLevel = 1;
+        const maxLevel = 250;
+        let correctAnswer;
+        let score = 0;
+        let timeLeft = 10;
+        let timerInterval;
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function round(value, decimals) {
+            return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+        }
+
+        function generateQuestion(level) {
+            let question = '';
+            let answer = 0;
+            const type = Math.floor((level - 1) / 25);
+
+            switch (type) {
+                case 0: {
+                    const a = randInt(1, 50);
+                    const b = randInt(1, 50);
+                    const c = randInt(1, 20);
+                    question = `${a} + ${b} - ${c} = ?`;
+                    answer = a + b - c;
+                    break;
+                }
+                case 1: {
+                    const b = randInt(2, 10);
+                    const a = b * randInt(5, 20);
+                    const c = randInt(2, 10);
+                    question = `${a} ÷ ${b} × ${c} = ?`;
+                    answer = (a / b) * c;
+                    break;
+                }
+                case 2: {
+                    const a = randInt(2, 10);
+                    const x = randInt(1, 15);
+                    const b = randInt(-20, 20);
+                    const c = a * x + b;
+                    question = `Tìm x: ${a}x + ${b} = ${c}`;
+                    answer = x;
+                    break;
+                }
+                case 3: {
+                    const a = randInt(2, 5);
+                    const b = randInt(2, 4);
+                    question = `Tính: ${a} ^ ${b} = ?`;
+                    answer = Math.pow(a, b);
+                    break;
+                }
+                case 4: {
+                    const a = randInt(5, 25);
+                    const b = randInt(5, 25);
+                    question = a === b ? `Tính diện tích hình vuông có cạnh là ${a}.` : `Tính diện tích hình chữ nhật có chiều dài ${Math.max(a,b)} và chiều rộng ${Math.min(a,b)}.`;
+                    answer = a * b;
+                    break;
+                }
+                case 5: {
+                    const a = randInt(3, 20);
+                    const b = randInt(4, 20);
+                    question = `Một tam giác vuông có 2 cạnh góc vuông là ${a} và ${b}. Tìm cạnh huyền.`;
+                    answer = round(Math.sqrt(a * a + b * b), 2);
+                    break;
+                }
+                case 6: {
+                    const r = randInt(2, 15);
+                    question = `Tính diện tích hình tròn có bán kính ${r}. (Lấy π ≈ 3.14)`;
+                    answer = round(3.14 * r * r, 2);
+                    break;
+                }
+                case 7: {
+                    const x = randInt(5, 30);
+                    const y = randInt(1, x-1);
+                    const A = x + y;
+                    const B = x - y;
+                    question = `Biết x + y = ${A} và x - y = ${B}. Tìm giá trị của x.`;
+                    answer = x;
+                    break;
+                }
+                case 8: {
+                    const r1 = randInt(1, 8);
+                    const r2 = randInt(-7, -1);
+                    const b = -(r1 + r2);
+                    const c = r1 * r2;
+                    const sign = b >= 0 ? '+' : '-';
+                    const cSign = c >= 0 ? '+' : '-';
+                    question = `Tìm một nghiệm dương của phương trình: x² ${sign} ${Math.abs(b)}x ${cSign} ${Math.abs(c)} = 0`;
+                    answer = r1;
+                    break;
+                }
+                default: {
+                    const angle = 30;
+                    const opposite = randInt(5, 15);
+                    const hypotenuse = round(opposite / Math.sin(angle * Math.PI / 180), 0);
+                    question = `Trong tam giác vuông, cạnh đối diện với góc 30° là ${opposite}, cạnh huyền là ${hypotenuse}. Tìm sin(30°).`;
+                    answer = round(opposite/hypotenuse, 2);
+                    break;
+                }
+            }
+            return { question, answer };
+        }
+
+        function displayNewQuestion() {
+            clearInterval(timerInterval);
+            if (currentLevel > maxLevel) return showResult();
+
+            levelNumberEl.textContent = currentLevel;
+            const qa = generateQuestion(currentLevel);
+            questionTextEl.textContent = qa.question;
+            correctAnswer = qa.answer;
+            feedbackMessageEl.textContent = '';
+            answerInput.value = '';
+            answerInput.focus();
+            timeLeft = 10;
+            timerEl.textContent = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    feedbackMessageEl.textContent = 'Hết thời gian!';
+                    feedbackMessageEl.className = 'incorrect';
+                    currentLevel++;
+                    setTimeout(displayNewQuestion, 1000);
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            clearInterval(timerInterval);
+            const userAnswer = parseFloat(answerInput.value.replace(',', '.'));
+            if (isNaN(userAnswer)) {
+                feedbackMessageEl.textContent = "Vui lòng nhập một con số!";
+                feedbackMessageEl.className = 'incorrect';
+                return;
+            }
+            if (userAnswer === correctAnswer) {
+                score++;
+                feedbackMessageEl.textContent = "Chính xác!";
+                feedbackMessageEl.className = 'correct';
+            } else {
+                feedbackMessageEl.textContent = "Sai rồi, thử câu tiếp theo!";
+                feedbackMessageEl.className = 'incorrect';
+            }
+            scoreEl.textContent = score;
+            currentLevel++;
+            setTimeout(displayNewQuestion, 1000);
+        }
+
+        function showResult() {
+            let stars = score >= 250 ? 3 : score >= 225 ? 2 : score >= 200 ? 1 : 0;
+            let message = `<div class="win-message">Hoàn thành!<br>Bạn đạt ${score} điểm và nhận được ${stars} sao 🌟</div>`;
+            message += '<button id="retry-button">Chơi lại</button>';
+            gameContainer.innerHTML = message;
+            document.getElementById('retry-button').addEventListener('click', () => location.reload());
+        }
+
+        submitButton.addEventListener('click', checkAnswer);
+        answerInput.addEventListener('keydown', e => e.key === 'Enter' && checkAnswer());
+
+        window.onload = displayNewQuestion;
+    </script>
+</body>
+</html>
